@@ -1,5 +1,5 @@
 # Problem Statement-
-# Predicting what all customers are likely to leave the bank
+# Predicting who all customers are likely to leave the bank
 # Customer details are provided in the form of csv file
 
 #We are going to make an ANN to solve this problem
