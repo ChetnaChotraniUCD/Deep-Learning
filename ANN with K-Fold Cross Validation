@@ -1,0 +1,68 @@
+#### Data preprcoessing step remains the same as original #############
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+dataset = pd.read_csv('Churn_Modelling.csv')
+X = dataset.iloc[:, 3: 13].values
+y = dataset.iloc[:, 13].values
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+labelencoder_X_1 = LabelEncoder()
+X[:, 1] = labelencoder_X_1.fit_transform(X[:, 1])
+labelencoder_X_2 = LabelEncoder()
+X[:, 2] = labelencoder_X_2.fit_transform(X[:, 2])
+onehotencoder = OneHotEncoder(categorical_features = [1])
+X = onehotencoder.fit_transform(X).toarray()
+X = X[:,1:]
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, random_state = 0)
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+X_train = sc.fit_transform(X_train)
+X_test = sc.transform(X_test)
+
+#####################################################################################################################################
+
+### Building ANN ####
+#We got 2 different accuracies when the same model was tested 2 times.We get a variance problem, judging what accuracy to consider
+#K-fold cross validation solutions comes into picture We take the average the all the accuracies obtained
+#We need low bias and low variance - More accuracies and small differences between different accuracies
+#Implementing K-FOLD Cross Validation
+
+#K Fold cross validation function belongs to scikit-learn
+#We need to combine Keras and scikit-learn
+#keras.wrapper wraps the k fold cross validation function into keras
+
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import cross_val_score
+    
+#########################################################
+
+#Build ANN Classifier, same as above, function that builds the architecture of ANN
+def build_classifier():
+    classifier = Sequential()
+    classifier.add(Dense(output_dim = 6, init = 'uniform', activation = 'relu', input_dim = 11))
+    classifier.add(Dense(output_dim = 6, init = 'uniform', activation = 'relu'))
+    classifier.add(Dense(output_dim = 1, init = 'uniform', activation = 'sigmoid'))
+    classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+    return classifier
+
+############################################################
+
+#Create a new classifier which will be a global classifier variable
+classifier  = KerasClassifier(build_fn = build_classifier,batch_size = 10, nb_epoch = 100)
+
+############################################################
+
+#estimator - object that is used to fit the data
+#x - training set , y = target variable
+#cv - number of folds - arbitary 
+#n_jobs - number of cpu's used to do this job - Important parameter 
+#Remember in the basic model, it took lot of time to run 1 model with 100 epchs
+# for 10 fold model, we need all CPS's to run parallel computing 
+# n_jobs = -1 will include all CPU's
+
+accuracies = cross_val_score(estimator = classifier, X = X_train, y = y_train, cv = 10, n_jobs = -1 )
+mean = accuracies.mean()
+variance = accuracies.std()    
+
+########################################################################################################################################
