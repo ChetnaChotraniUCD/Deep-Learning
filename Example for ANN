@@ -1,0 +1,24 @@
+#We need to predict whether this customer will leave the bank or not
+#Homework
+#Geography: France
+#Credit Score: 600
+#Gender: Male
+#Age: 40 years old
+#Tenure: 3 years
+#Balance: $60000
+#Number of Products: 2
+#Does this customer have a credit card ? Yes
+#Is this customer an Active Member: Yes
+#Estimated Salary: $50000
+
+#Double pair of brackets for storing data horizontally (horizontal vector)
+
+#Information needs to be added in the same order as the data set
+#Choose what variables correspond to categorical variable 
+# for France, we encoded dummy variables, so we need to find out what pair of values correspond to the country variable France
+# we need to make it to the same scale to which the model was trained
+#We take the same sc object
+new_prediction = classifier.predict(sc.transform(np.array([[0.0,0,600,1,400,3,60000,2,1,1,50000]])))
+new_prediction = (new_prediction > 0.5)
+
+# Final Prediction is done. It's False
