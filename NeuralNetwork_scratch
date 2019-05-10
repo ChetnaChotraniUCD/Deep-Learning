@@ -1,0 +1,203 @@
+#Multi Layer percepron from scratch without using the keras library
+#Building a Multi-layer perceptron in python
+
+#Importing relevant packages
+#Defining Activation functions and its derivative
+#Creating a class Layer which will be added to a Class Network
+#Creating a class Network which creates a Multi layered perceptron with input, hidden and output layers
+#There are 3 functions defined in Layer class
+#forward() : performs feed forward computation
+#computeGradients() : performs error calculation and compute gradients
+#updateWeights() : updates weights by backpropogation
+
+import numpy as np
+
+#Defining Activation functions:
+def tanh(x):
+  return np.tanh(x)
+
+#Finding derivative of activation function
+def dtanh(y):
+  return 1 - y ** 2
+
+class Layer:
+  
+  #Initializing all weights randomly between -1 and 1 
+  def __init__(self, num_inputs, num_outputs):  
+    #Here mean = -1, variance = -1, Output shape : num_inputs * num_output
+    self.weights = np.random.uniform(-1, 1, (num_inputs, num_outputs))
+
+  def forward(self, input):
+    #Calculating the dot product of inputs and corresponding weights and apply tanh as the activation function
+    self.output = tanh(input.dot(self.weights))
+    #print(self.weights)
+    return self.output
+
+  def computeGradient(self, error):
+    #Computing gradient descent by taking the derivative of activation function
+    self.delta = error * dtanh(self.output)
+   # print(self.delta)
+    return self.delta.dot(self.weights.T)
+
+  def updateWeights(self, input, learning_rate):
+    #print(self.delta)
+    #Updating weights according to the gradient and the learning rate
+    self.weights += input.T.dot(self.delta) * learning_rate
+ 
+class Network:
+  def __init__(self, layers):
+    self.layers = layers
+
+  #For each layer, the output is calculated by calling the function 'forward' defined in Layer class
+  def forward(self, input):
+    output = input
+    for layer in self.layers:
+      output = layer.forward(output)
+    return output
+
+  #Gradient is calculated from the last layer by calling the function 'backprop' defined in Layer class
+  def backprop(self, input, error, learning_rate):
+    for layer in reversed(self.layers):
+      error = layer.computeGradient(error)
+
+  #Weights are updated by calling the function 'updateWeights' defined in Layer class  
+    for layer in self.layers:
+      layer.updateWeights(input, learning_rate)
+      input = layer.output
+
+#Training MLP with 2 input, 2 hidden and 1 output layers on XOR, Evaluating MLP for XOR
+
+#Train an MLP with 2 inputs, two hidden units and one output on the following examples (XOR function)
+#((0, 0), 0) ((0, 1), 1) ((1, 0), 1) ((1, 1), 0) 
+
+#Storing the combinations in an array
+examples = [[np.array([[ 0,0 ]]), np.array([[ 0 ]]) ], [np.array([[ 0,1 ]]), np.array([[1]]) ],[ np.array([[1,0]]), np.array([[ 1 ]])],[np.array([[ 1, 1 ]]), np.array([[ 0 ]])]]
+#Random Seed generator 
+np.random.seed(0)
+
+#Building model with the below configurations
+num_inputs = 2
+num_hidden = 2
+num_output = 1
+
+#Creating the Network
+network = Network([Layer(num_inputs, num_hidden),Layer(num_hidden, num_output)])
+
+#Setting the learning rate of MLP
+learning_rate = 0.1
+
+#Setting the target_mse, in this case reaching a target_mse of 0.1, the epochs stops
+target_mse = 0.01
+
+#Running model for 1500 epochs
+for epoch in range(1500):
+  errors = []
+
+  for input, target in examples:
+    # Feed forward propgation 
+    output = network.forward(input)
+
+    #Computing the difference between Target value and the output
+    error = target - output
+    errors.append(error)
+    # Backpropogating the erro
+    network.backprop(input, error, learning_rate)
+    
+  #Computing mean squared error
+  if epoch % 100 == 0:
+    mse = (np.array(errors) ** 2).mean()
+    print("Epoch: %3d, MSE: %.3f" % (epoch, mse))
+    if mse <= target_mse:
+      print("Target MSE reached")
+      break
+  
+  #Checking if the model predicts correctly all the labels
+def eval(x, y):
+  output = network.forward(x)
+  normalized = int(round(output[0]))
+  error = y - output[0]
+  return "%d (% .2f)   Error: %.2f" % (normalized, output[0], error)
+
+print("Evaluating:")
+print("1 XOR 0 = " + eval(np.array([1, 0]), 1))
+print("0 XOR 1 = " + eval(np.array([0, 1]), 1))
+print("1 XOR 1 = " + eval(np.array([1, 1]), 0))
+print("0 XOR 0 = " + eval(np.array([0, 0]), 0))
+
+#Generating 200 vectors with 4 components between +1 and -1 
+# Output should be a combination of these vectors : sin (x1-x2+x3-x4)
+#Training model on 150 vectors
+# Testing model on remaining 50 vectors
+# Comparing the error on train and test set
+
+#Generating inputs and outputs
+data = []
+for i in range(0,200):
+  
+  #Generating random integer values between 1 an -1 for 200 rows and 4 components 
+  input_new = np.random.uniform(1,-1,size = (200,4))
+  
+  #Generating output from inputs and appending inputs and output in a list
+  examples = [input_new[i],np.sin(input_new[i,0]-input_new[i,1]+input_new[i,2]-input_new[i,3])]
+  i=i+1
+  data.append(examples)
+
+#printing a sample data (input and output)
+print(data[0])
+
+#Dividing data into train and test set
+train = data[:150]
+test = data[150:]
+
+#Training the MLP
+#Random Seed generator 
+np.random.seed(0)
+
+#Building model with the below configurations
+num_inputs = 4
+num_hidden = 4
+num_output = 1
+
+#Creating the Network
+network = Network([Layer(num_inputs, num_hidden),Layer(num_hidden, num_output)])
+
+#Setting the learning rate of MLP
+learning_rate = 0.1
+
+#Setting the target_mse, in this case reaching a target_mse of 0.1, the epochs stops
+target_mse = 0.005
+
+#Running model for 3000 epochs
+
+for epoch in range(3000):
+  errors = []
+  for input,target in train:
+    # Feed forward propgation 
+    input = input.reshape(1,4)
+    #Computing the difference between Target value and the output
+    output = network.forward(input)
+    # Compute the error
+    error = target - output
+    errors.append(error)
+    # Backpropogating the error
+    network.backprop(input, error, learning_rate)
+
+  #Computing mean squared error
+  if epoch % 100 == 0:
+    mse = (np.array(errors) ** 2).mean()
+    print("  Epoch %3d   MSE: %f" % (epoch, mse))
+    if mse <= target_mse:
+      print("  * Target MSE reached *")
+      break
+
+#Testing model on test data 
+def eval(x, y):
+  output = network.forward(x)
+  error = y - output
+  errors.append(error)
+  mse = (np.array(errors) ** 2).mean()
+  return "(%f)   Error: %f" % (output, mse)
+
+print("Evaluating:")
+for x, y in test:
+  print(" Y: ",y, eval(x,y))
